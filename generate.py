@@ -139,7 +139,7 @@ class CrosswordCreator():
 
         return revised
 
-    def ac3(self, arcs=None):
+    def ac3(self, arcs=None): # Takes optional argument arcs: list of arcs
         """
         Update `self.domains` such that each variable is arc consistent.
         If `arcs` is None, begin with initial list of all arcs in the problem.
@@ -148,7 +148,9 @@ class CrosswordCreator():
         Return True if arc consistency is enforced and no domains are empty;
         return False if one or more domains end up empty.
         """
-        raise NotImplementedError
+        # arc is tuple (x, y)
+        # list of arcs consists of neighbors of variable 
+        # class crossword has function neigbors()
 
     def assignment_complete(self, assignment):
         """
