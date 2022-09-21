@@ -154,6 +154,18 @@ class CrosswordCreator():
 
         return revised
 
+    def arcs_initial(self):
+        # Empty set for arcs    
+        arcs = set()
+
+        # Loop over each variable
+        for variable in self.crossword.variables:
+            # Loop over each of neighbor of variable
+            for neighbor in self.crossword.neighbors(variable):
+                arcs.add((variable, neighbor))
+        
+        return arcs
+    
     def ac3(self, arcs=None): # Takes optional argument arcs: list of arcs
         """
         Update `self.domains` such that each variable is arc consistent.
@@ -163,9 +175,27 @@ class CrosswordCreator():
         Return True if arc consistency is enforced and no domains are empty;
         return False if one or more domains end up empty.
         """
-        # arc is tuple (x, y)
+        # arc is set of tuples (x, y)
         # list of arcs consists of neighbors of variable 
         # class crossword has function neigbors()
+
+        # Create initial queue with all arcs
+        if arcs is None:
+            arcs = self.arcs_initial()
+
+        # While set is not empty
+        while len(arcs) > 0:
+            (X, Y) = arcs.pop()
+
+            if self.revise(X, Y):
+                # If empty
+                if not self.domains[X]:
+                    return False
+                else:
+                    for Z in (self.crossword.neighbors(X) - {Y}):
+                        arcs.add((Z, X))
+                        
+        return True
 
     def assignment_complete(self, assignment):
         """
