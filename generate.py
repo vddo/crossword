@@ -1,5 +1,5 @@
 """
-Version 0.5
+Version 0.6
 """
 
 import sys
@@ -238,7 +238,7 @@ class CrosswordCreator():
 
             # Check if length of values match to length variables
             if len(assignment[x]) != x.length or len(assignment[y]) != y.length:
-                print('incorrect length')
+                # print('incorrect length')
                 return False
 
             # Check if overlapping strings are same
@@ -246,10 +246,11 @@ class CrosswordCreator():
             # x, y are neighbor variables from arc
             (m, n) = self.crossword.overlaps[(x, y)]
             if assignment[x][m] != assignment[y][n]:
-                print('incorrect overlapping')
+                # print('incorrect overlapping')
                 return False
     
         # If nothing inconsistent
+        print('consistent')
         return True
 
         # End of funtion  
@@ -341,8 +342,6 @@ class CrosswordCreator():
                 if result is not None:
                     return result
         
-        # Should never return None, because before that assignment would be complete
-        print('returns None')
         return None
 
 
