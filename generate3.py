@@ -1,8 +1,5 @@
 """
-Version 0.7
-
-Change Log:
-- in consistent(): no multiple use of words
+Version 0.1
 """
 
 import sys
@@ -180,6 +177,16 @@ class CrosswordCreator():
         return arcs
 
         # End of function
+
+    def arcs_inference(self, var):
+        # Empty set for arcs    
+        arcs = set()
+
+        # Loop over each value
+        for neighbor in self.crossword.neighbors(var):
+            arcs.add((var, neighbor))
+        
+        return arcs
     
     def ac3(self, arcs=None): # Takes optional argument arcs: list of arcs
         """
@@ -232,12 +239,6 @@ class CrosswordCreator():
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
-        
-        # Check if word already used
-        for value in list(assignment.values()):
-            if list(assignment.values()).count(value) > 1:
-                return False
-
         # take arcs list: tuples in a list
         for (x, y) in self.arcs_initial():
 
@@ -257,7 +258,6 @@ class CrosswordCreator():
             if assignment[x][m] != assignment[y][n]:
                 # print('incorrect overlapping')
                 return False
-
     
         # If nothing inconsistent
         print('consistent')
@@ -346,6 +346,10 @@ class CrosswordCreator():
             print('Testing value: ', value)
             new_assignment = assignment.copy()
             new_assignment[var] = value
+
+            # New inference
+            arcs = self.arcs_inference(var)
+            self.ac3(arcs)
 
             if self.consistent(new_assignment):
                 result = self.backtrack(new_assignment)

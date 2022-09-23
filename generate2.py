@@ -1,8 +1,9 @@
 """
-Version 0.7
+Version 0.2
 
 Change Log:
-- in consistent(): no multiple use of words
+- in backtrack(): fixed inference and ac3
+- in consistent(): added no multiple use of words
 """
 
 import sys
@@ -101,7 +102,8 @@ class CrosswordCreator():
         self.ac3()
 
         # Calls backtrack() on an empty dict
-        return self.backtrack(dict())
+        domains_copy = self.domains.copy()
+        return self.backtrack(dict(), domains_copy)
 
     def enforce_node_consistency(self):
         """
@@ -214,6 +216,103 @@ class CrosswordCreator():
 
         # End of function
 
+
+    def revise_inference(self, inference, x, y):
+        """
+        Make variable `x` arc consistent with variable `y`.
+        To do so, remove values from `self.domains[x]` for which there is no
+        possible corresponding value for `y` in `self.domains[y]`.
+
+        Return True if a revision was made to the domain of `x`; return
+        False if no revision was made.
+        """
+        # for prints in list(inference.values()):
+        #     print('New inference lengths: ', len(prints), '\n')
+        revised = False
+
+        # List with removing candidates
+        removing_list = []
+        
+        # Indices of overlapping
+        i_x, i_y = self.crossword.overlaps[x, y]
+        # print(i_x, i_y)
+        
+        for word_x in inference[x]:
+            print(word_x)
+
+            # Count if condition for arc consistency was met: word_y != word_x
+            count = 0
+
+            for word_y in inference[y]:
+                if word_y[i_y] == word_x[i_x]:
+                    count += 1
+                    break
+
+            # If condition was not met add word_x to removing list
+            if count == 0:
+                # creator.domains[x].remove(word_x)
+                removing_list.append(word_x)
+                revised = True
+
+        # Remove candidated from set domain[x]
+        # print('Now removing: ', removing_list)
+        inference[x] = inference[x] - set(removing_list)
+
+        return revised
+
+        # End of function
+
+    def arcs_inference(self, var):
+        # print(var)
+        # Empty set for arcs    
+        arcs = set()
+
+        # Loop over each value
+        for neighbor in self.crossword.neighbors(var):
+            arcs.add((var, neighbor))
+        print('length arcs', len(arcs))
+        return arcs
+
+        # End of function
+    
+    def ac3_inference(self, inference, arcs): # Takes optional argument arcs: list of arcs
+        """
+        Update `self.domains` such that each variable is arc consistent.
+        If `arcs` is None, begin with initial list of all arcs in the problem.
+        Otherwise, use `arcs` as the initial list of arcs to make consistent.
+
+        Return True if arc consistency is enforced and no domains are empty;
+        return False if one or more domains end up empty.
+        """
+        # arc is set of tuples (x, y)
+        # list of arcs consists of neighbors of variable 
+        # class crossword has function neigbors()
+
+        # While set is not empty
+        # while len(arcs) > 0:
+        #     (X, Y) = arcs.pop()
+        #     self.revise_inference(inference, X, Y)
+
+        # print(arcs, '\n')
+
+
+        while len(arcs) > 0:
+            (X, Y) = arcs.pop()
+
+            if self.revise_inference(inference, X, Y):
+                # If empty
+                if not inference[X]:
+                    return False
+                else:
+                    for Z in (self.crossword.neighbors(X) - {Y}):
+                        arcs.add((Z, X))
+                        
+        return True
+
+        # End of function
+
+
+
     def assignment_complete(self, assignment):
         """
         Return True if `assignment` is complete (i.e., assigns a value to each
@@ -232,13 +331,13 @@ class CrosswordCreator():
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
-        
+        # take arcs list: tuples in a list
+
         # Check if word already used
         for value in list(assignment.values()):
             if list(assignment.values()).count(value) > 1:
                 return False
 
-        # take arcs list: tuples in a list
         for (x, y) in self.arcs_initial():
 
             # Only arcs where both Variables are already assigned
@@ -257,7 +356,6 @@ class CrosswordCreator():
             if assignment[x][m] != assignment[y][n]:
                 # print('incorrect overlapping')
                 return False
-
     
         # If nothing inconsistent
         print('consistent')
@@ -274,7 +372,7 @@ class CrosswordCreator():
         """
         raise NotImplementedError
 
-    def select_unassigned_variable(self, assignment):
+    def select_unassigned_variable(self, assignment, inference):
         """
         Return an unassigned variable not already part of `assignment`.
         Choose the variable with the minimum number of remaining values
@@ -286,7 +384,7 @@ class CrosswordCreator():
         # List to store vars not yet in assignment
         remaining_vars = list()
 
-        for var1 in self.domains:
+        for var1 in inference:
             # var not yet in assignment
             if var1 not in assignment:
                  remaining_vars.append(var1)
@@ -298,12 +396,12 @@ class CrosswordCreator():
                     th = float('inf')
 
                     # If current var has less words, remember var and new count of words
-                    if len(self.domains[var2]) < th:
-                        th = len(self.domains[var2])
+                    if len(inference[var2]) < th:
+                        th = len(inference[var2])
                         var_min = var2
                     
                     # If both variables have same amount of words in domain
-                    elif len(self.domains[var2]) == th:
+                    elif len(inference[var2]) == th:
 
                         # Take new var if higher order
                         if len(self.crossword.neighbors(var2)) > len(self.crossword.neighbors(var_min)):
@@ -325,7 +423,7 @@ class CrosswordCreator():
                 
         # return None
 
-    def backtrack(self, assignment):
+    def backtrack(self, assignment, inference):
         """
         Using Backtracking Search, take as input a partial assignment for the
         crossword and return a complete assignment if possible to do so.
@@ -341,14 +439,23 @@ class CrosswordCreator():
             return assignment
         
         # New variable
-        var = self.select_unassigned_variable(assignment)
-        for value in self.domains[var]:
+        var = self.select_unassigned_variable(assignment, inference)
+        # print(var)
+        for value in inference[var]:
             print('Testing value: ', value)
             new_assignment = assignment.copy()
             new_assignment[var] = value
+            print('new assignment')
+            # new inference
+            print('Calling arcs')
+            arc_inference = self.arcs_inference(var)
+            # print(arc_inference)
+            new_inference = inference.copy()
+            new_inference[var] = {value}
+            self.ac3_inference(new_inference, arc_inference)
 
             if self.consistent(new_assignment):
-                result = self.backtrack(new_assignment)
+                result = self.backtrack(new_assignment, new_inference)
                 if result is not None:
                     return result
         
