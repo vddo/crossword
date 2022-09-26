@@ -1,8 +1,10 @@
 """
 Version 0.7
-
 Change Log:
 - in consistent(): no multiple use of words
+
+Version 0.8:
+- implement ordered_domain_values()
 """
 
 import sys
@@ -150,8 +152,6 @@ class CrosswordCreator():
             count = 0
 
             for word_y in self.domains[y]:
-                if word_y[i_y] == word_x[i_x]:
-                    count += 1
                     break
 
             # If condition was not met add word_x to removing list
@@ -272,7 +272,16 @@ class CrosswordCreator():
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-        raise NotImplementedError
+
+        # return a list
+        # input var, assignment
+        # check if neighbor of var is already in assignment
+        # allocate number of mismatches for using overlap to "n"
+        # add all outruled values in neighboring domain together to n
+
+        # Check for already assigned neighbors
+
+
 
     def select_unassigned_variable(self, assignment):
         """
