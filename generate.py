@@ -1,4 +1,7 @@
 """
+Version 1.0
+- order_domain_values() in use
+
 Version 0.8:
 - implement ordered_domain_values()
 - repair revise()
@@ -399,8 +402,7 @@ class CrosswordCreator():
         # New variable
         var = self.select_unassigned_variable(assignment)
         # Loop over values from ordered domain list
-        # for value in self.order_domain_values(var, assignment):
-        for value in self.domains[var]:
+        for value in self.order_domain_values(var, assignment):
             # print('Testing value: ', value, 'from: ', self.order_domain_values(var, assignment))
             print('Testing value: ', value)
             new_assignment = assignment.copy()
