@@ -280,7 +280,18 @@ class CrosswordCreator():
         # add all outruled values in neighboring domain together to n
 
         # Check for already assigned neighbors
+        candidates = set()
+        var_neighbors = self.crossword.neighbors(var)
+        for neighbor in var_neighbors:
+            if neighbor in assignment:
+                candidates.add(neighbor)
 
+        # Remove vars that are already in assignment
+        var_neighbors -= candidates
+
+        
+
+    
 
 
     def select_unassigned_variable(self, assignment):
