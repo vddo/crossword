@@ -1,7 +1,8 @@
 """
-Version 0.2
+Version 0.3:
+- order_domain_values(); not in backtrack, yet
 
-Change Log:
+Version 0.2:
 - in backtrack(): fixed inference and ac3
 - in consistent(): added no multiple use of words
 """
@@ -238,7 +239,6 @@ class CrosswordCreator():
         # print(i_x, i_y)
         
         for word_x in inference[x]:
-            print(word_x)
 
             # Count if condition for arc consistency was met: word_y != word_x
             count = 0
@@ -270,31 +270,11 @@ class CrosswordCreator():
         # Loop over each value
         for neighbor in self.crossword.neighbors(var):
             arcs.add((var, neighbor))
-        print('length arcs', len(arcs))
         return arcs
 
         # End of function
     
     def ac3_inference(self, inference, arcs): # Takes optional argument arcs: list of arcs
-        """
-        Update `self.domains` such that each variable is arc consistent.
-        If `arcs` is None, begin with initial list of all arcs in the problem.
-        Otherwise, use `arcs` as the initial list of arcs to make consistent.
-
-        Return True if arc consistency is enforced and no domains are empty;
-        return False if one or more domains end up empty.
-        """
-        # arc is set of tuples (x, y)
-        # list of arcs consists of neighbors of variable 
-        # class crossword has function neigbors()
-
-        # While set is not empty
-        # while len(arcs) > 0:
-        #     (X, Y) = arcs.pop()
-        #     self.revise_inference(inference, X, Y)
-
-        # print(arcs, '\n')
-
 
         while len(arcs) > 0:
             (X, Y) = arcs.pop()
@@ -306,7 +286,7 @@ class CrosswordCreator():
                 else:
                     for Z in (self.crossword.neighbors(X) - {Y}):
                         arcs.add((Z, X))
-                        
+        print('New arc enforcement')                
         return True
 
         # End of function
@@ -336,6 +316,7 @@ class CrosswordCreator():
         # Check if word already used
         for value in list(assignment.values()):
             if list(assignment.values()).count(value) > 1:
+                print('Already in assignment')
                 return False
 
         for (x, y) in self.arcs_initial():
@@ -346,7 +327,7 @@ class CrosswordCreator():
 
             # Check if length of values match to length variables
             if len(assignment[x]) != x.length or len(assignment[y]) != y.length:
-                # print('incorrect length')
+                print('Incorrect length')
                 return False
 
             # Check if overlapping strings are same
@@ -354,7 +335,7 @@ class CrosswordCreator():
             # x, y are neighbor variables from arc
             (m, n) = self.crossword.overlaps[(x, y)]
             if assignment[x][m] != assignment[y][n]:
-                # print('incorrect overlapping')
+                print('Incorrect overlapping')
                 return False
     
         # If nothing inconsistent
@@ -363,14 +344,64 @@ class CrosswordCreator():
 
         # End of funtion  
 
-    def order_domain_values(self, var, assignment):
+    def order_domain_values(self, var, assignment, inference):
         """
         Return a list of values in the domain of `var`, in order by
         the number of values they rule out for neighboring variables.
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-        raise NotImplementedError
+
+        # Check for already assigned neighbors
+        candidates = set()
+
+        var_neighbors = self.crossword.neighbors(var)
+
+        for neighbor in var_neighbors:
+
+            if neighbor in assignment:
+
+                candidates.add(neighbor)
+
+        # Remove vars that are already in assignment
+        var_neighbors -= candidates
+
+        if len(var_neighbors) == 0:
+            return inference[var]
+
+        else:
+            ordered_domain = list()
+
+            # Loop over domain in var
+            for word in inference[var]:
+
+                # New counter for each word
+                n = 0
+
+                for neighbor2 in var_neighbors:
+
+                    # Read overlapping indices
+                    (i, j) = self.crossword.overlaps[var, neighbor2]
+
+                    # Loop over words in neighboring variable
+                    for word_neighbor in inference[neighbor2]:
+
+                        # Of letters do not match, add n + 1
+                        if word[i] != word_neighbor[j]:
+
+                            n += 1
+                                        
+                # Add word to dict with key = n
+                ordered_domain.append((word, n))
+
+            # Sort list
+            ordered_domain = sorted(ordered_domain, key=lambda value: value[1])
+
+            # Only take values; delete n
+            for i in range(len(ordered_domain)):
+                ordered_domain[i] = ordered_domain[i][0]
+
+            return ordered_domain
 
     def select_unassigned_variable(self, assignment, inference):
         """
@@ -441,13 +472,11 @@ class CrosswordCreator():
         # New variable
         var = self.select_unassigned_variable(assignment, inference)
         # print(var)
-        for value in inference[var]:
+        for value in self.order_domain_values(var, assignment, inference):
             print('Testing value: ', value)
             new_assignment = assignment.copy()
             new_assignment[var] = value
-            print('new assignment')
             # new inference
-            print('Calling arcs')
             arc_inference = self.arcs_inference(var)
             # print(arc_inference)
             new_inference = inference.copy()

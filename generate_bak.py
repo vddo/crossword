@@ -1,3 +1,17 @@
+"""
+Version 1.0
+- order_domain_values() in use
+
+Version 0.8:
+- implement ordered_domain_values()
+- repair revise()
+- extend monitoring
+
+Version 0.7
+Change Log:
+- in consistent(): no multiple use of words
+"""
+
 import sys
 
 from crossword import *
@@ -229,6 +243,7 @@ class CrosswordCreator():
         # Check if word already used
         for value in list(assignment.values()):
             if list(assignment.values()).count(value) > 1:
+                print('Not consistent')
                 return False
 
         # take arcs list: tuples in a list
@@ -240,6 +255,7 @@ class CrosswordCreator():
 
             # Check if length of values match to length variables
             if len(assignment[x]) != x.length or len(assignment[y]) != y.length:
+                print('Not consistent')
                 return False
 
             # Check if overlapping strings are same
@@ -247,10 +263,12 @@ class CrosswordCreator():
             # x, y are neighbor variables from arc
             (m, n) = self.crossword.overlaps[(x, y)]
             if assignment[x][m] != assignment[y][n]:
+                print('incorrect overlapping')
                 return False
 
     
         # If nothing inconsistent
+        print('consistent')
         return True
 
         # End of funtion  
@@ -359,6 +377,12 @@ class CrosswordCreator():
         
         return None
 
+        # for variable in self.domains:
+        #         if variable not in assignment:
+        #             print('Selected unassigned variable: ', variable)
+        #             return variable
+                
+        # return None
 
     def backtrack(self, assignment):
         """
@@ -379,6 +403,8 @@ class CrosswordCreator():
         var = self.select_unassigned_variable(assignment)
         # Loop over values from ordered domain list
         for value in self.order_domain_values(var, assignment):
+            # print('Testing value: ', value, 'from: ', self.order_domain_values(var, assignment))
+            print('Testing value: ', value)
             new_assignment = assignment.copy()
             new_assignment[var] = value
 
