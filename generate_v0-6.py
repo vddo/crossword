@@ -1,12 +1,5 @@
 """
-Version 0.8:
-- implement ordered_domain_values()
-- repair revise()
-- extend monitoring
-
-Version 0.7
-Change Log:
-- in consistent(): no multiple use of words
+Version 0.6
 """
 
 import sys
@@ -236,13 +229,6 @@ class CrosswordCreator():
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
-        
-        # Check if word already used
-        for value in list(assignment.values()):
-            if list(assignment.values()).count(value) > 1:
-                print('Not consistent')
-                return False
-
         # take arcs list: tuples in a list
         for (x, y) in self.arcs_initial():
 
@@ -252,7 +238,7 @@ class CrosswordCreator():
 
             # Check if length of values match to length variables
             if len(assignment[x]) != x.length or len(assignment[y]) != y.length:
-                print('Not consistent')
+                # print('incorrect length')
                 return False
 
             # Check if overlapping strings are same
@@ -260,9 +246,8 @@ class CrosswordCreator():
             # x, y are neighbor variables from arc
             (m, n) = self.crossword.overlaps[(x, y)]
             if assignment[x][m] != assignment[y][n]:
-                print('incorrect overlapping')
+                # print('incorrect overlapping')
                 return False
-
     
         # If nothing inconsistent
         print('consistent')
@@ -277,58 +262,7 @@ class CrosswordCreator():
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-
-        # Check for already assigned neighbors
-        candidates = set()
-
-        var_neighbors = self.crossword.neighbors(var)
-
-        for neighbor in var_neighbors:
-
-            if neighbor in assignment:
-
-                candidates.add(neighbor)
-
-        # Remove vars that are already in assignment
-        var_neighbors -= candidates
-
-        if len(var_neighbors) == 0:
-            return self.domains[var]
-
-        else:
-            ordered_domain = list()
-
-            # Loop over domain in var
-            for word in self.domains[var]:
-
-                # New counter for each word
-                n = 0
-
-                for neighbor2 in var_neighbors:
-
-                    # Read overlapping indices
-                    (i, j) = self.crossword.overlaps[var, neighbor2]
-
-                    # Loop over words in neighboring variable
-                    for word_neighbor in self.domains[neighbor2]:
-
-                        # Of letters do not match, add n + 1
-                        if word[i] != word_neighbor[j]:
-
-                            n += 1
-                                        
-                # Add word to dict with key = n
-                ordered_domain.append((word, n))
-
-            # Sort list
-            ordered_domain = sorted(ordered_domain, key=lambda value: value[1])
-
-            # Only take values; delete n
-            for i in range(len(ordered_domain)):
-                ordered_domain[i] = ordered_domain[i][0]
-
-            return ordered_domain
-        
+        raise NotImplementedError
 
     def select_unassigned_variable(self, assignment):
         """
@@ -398,10 +332,7 @@ class CrosswordCreator():
         
         # New variable
         var = self.select_unassigned_variable(assignment)
-        # Loop over values from ordered domain list
-        # for value in self.order_domain_values(var, assignment):
         for value in self.domains[var]:
-            # print('Testing value: ', value, 'from: ', self.order_domain_values(var, assignment))
             print('Testing value: ', value)
             new_assignment = assignment.copy()
             new_assignment[var] = value
